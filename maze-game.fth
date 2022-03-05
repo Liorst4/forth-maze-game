@@ -18,17 +18,65 @@ end-structure
 
 	    and
 ;
+
+: location! { x y location-pointer }
+	       x location-pointer location.x !
+	       y location-pointer location.y !
+;
+
 char @ constant player.glyph
 create player location allot
-
-0 player location.x !
-0 player location.y !
 
 char # constant maze-exit.glyph
 create maze-exit location allot
 
-10 maze-exit location.x !
-10 maze-exit location.y !
+\ char _ constant maze-empty-space
+
+12 constant maze-row-width
+variable maze-builder-row
+
+: location-from-glyph ( c -- addr )
+  case
+    player.glyph of
+      player
+    endof
+
+    maze-exit.glyph of
+      maze-exit
+    endof
+
+    \ default
+    >r 0 r>
+  endcase
+;
+
+: parse-maze-row { text-buffer text-buffer-byte-count }
+		 \ TODO: Verify buffer size
+		 maze-row-width 0 do
+		   text-buffer i + c@ location-from-glyph dup
+		   0 = if
+		     drop
+		   else
+		     i maze-builder-row @ rot location!
+		   then
+		 loop
+;
+
+: maze-row:
+  -1 parse parse-maze-row
+  1 maze-builder-row +!
+;
+
+maze-row: ____________
+maze-row: _@__________
+maze-row: ____________
+maze-row: ____________
+maze-row: ____________
+maze-row: ____________
+maze-row: ____________
+maze-row: ____________
+maze-row: __________#_
+maze-row: ____________
 
 : emit-at-location { glyph location-pointer }
 		  location-pointer location.x @
