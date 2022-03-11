@@ -24,6 +24,11 @@ end-structure
 	       y location-pointer location.y !
 ;
 
+: location.to-xy { location-pointer -- n n }
+		 location-pointer location.x @
+		 location-pointer location.y @
+;
+
 char @ constant player.glyph
 create player location allot
 
@@ -31,6 +36,7 @@ char # constant maze-exit.glyph
 create maze-exit location allot
 
 \ char _ constant maze-empty-space
+char * constant maze-wall.glyph
 
 12 constant maze-row-width
 variable maze-builder-row
@@ -52,6 +58,11 @@ variable maze-builder-row
 
 : parse-maze-row { text-buffer text-buffer-byte-count }
 		 \ TODO: Verify buffer size
+
+		 \ Assumes that latest word is dedicated to store the maze
+		 maze-row-width allot
+		 text-buffer here maze-row-width - maze-row-width cmove
+
 		 maze-row-width 0 do
 		   text-buffer i + c@ location-from-glyph dup
 		   0 = if
@@ -67,16 +78,46 @@ variable maze-builder-row
   1 maze-builder-row +!
 ;
 
-maze-row: ____________
-maze-row: _@__________
-maze-row: ____________
-maze-row: ____________
-maze-row: ____________
-maze-row: ____________
-maze-row: ____________
-maze-row: ____________
-maze-row: __________#_
-maze-row: ____________
+create maze
+
+maze-row: ************
+maze-row: *@___*_____*
+maze-row: *____*__*__*
+maze-row: ****_*__*__*
+maze-row: *____*__*__*
+maze-row: *____*__*__*
+maze-row: *_****__*__*
+maze-row: *____*__*__*
+maze-row: *_______*_#*
+maze-row: ************
+
+: maze@ { x y }
+	y maze-row-width *
+	x +
+	maze +
+	c@
+;
+
+: maze.width ( -- n )
+  maze-row-width
+;
+
+: maze.height ( -- n )
+  maze-builder-row @
+;
+
+\ render the maze
+: .maze ( -- )
+  0 0 at-xy
+  maze.height 0 do
+    0 i at-xy
+    maze.width 0 do
+      i j maze@ dup maze-wall.glyph = if else drop bl then
+      emit
+    loop
+  loop
+;
+
 
 : emit-at-location { glyph location-pointer }
 		  location-pointer location.x @
@@ -86,28 +127,47 @@ maze-row: ____________
 ;
 
 : render ( -- )
+  .maze
   player.glyph player emit-at-location
   maze-exit.glyph maze-exit emit-at-location
 ;
 
+\ Used for collision detection
+create tmp-player location allot
+
+: player->tmp-player ( -- )
+  player tmp-player location move
+;
+
+: tmp-player->player ( -- )
+  tmp-player player location move
+;
+
 : handle-input ( -- )
+  player->tmp-player
+
   key case
     direction.up of
-      -1 player location.y +!
+      -1 tmp-player location.y +!
     endof
 
     direction.down of
-      1 player location.y +!
+      1 tmp-player location.y +!
     endof
 
     direction.left of
-      -1 player location.x +!
+      -1 tmp-player location.x +!
     endof
 
     direction.right of
-      1 player location.x +!
+      1 tmp-player location.x +!
     endof
   endcase
+
+  tmp-player location.to-xy maze@ maze-wall.glyph = if
+  else
+    tmp-player->player
+  then
 ;
 
 : game ( -- )
