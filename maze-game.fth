@@ -68,7 +68,11 @@ variable maze-builder-row
 ;
 
 : parse-maze-row { text-buffer text-buffer-byte-count }
-		 \ TODO: Verify buffer size
+
+		 text-buffer-byte-count maze-row-width = if
+		 else
+		   abort" Invalid maze row!"
+		 then
 
 		 \ Assumes that latest word is dedicated to store the maze
 		 maze-row-width allot
