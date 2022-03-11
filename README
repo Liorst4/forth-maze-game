@@ -1,0 +1,7 @@
+A simple maze game written in forth.
+
+The player is represented by the @ character.
+The maze exit is represented by the # character.
+Walls are represented by the * character.
+
+Use WASD to navigate to the maze exit.
