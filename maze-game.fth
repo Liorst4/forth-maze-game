@@ -119,11 +119,8 @@ maze-row: ************
 ;
 
 
-: emit-at-location { glyph location-pointer }
-		  location-pointer location.x @
-		  location-pointer location.y @
-		  at-xy
-		  glyph emit
+: emit-at-location ( c a -- )
+  location.to-xy at-xy emit
 ;
 
 : render ( -- )
