@@ -25,14 +25,9 @@ begin-structure location
   1 cells +field location.y
 end-structure
 
-: location= { location-pointer-a location-pointer-b }
-	    location-pointer-a location.x @
-	    location-pointer-b location.x @ =
-
-	    location-pointer-a location.y @
-	    location-pointer-b location.y @ =
-
-	    and
+: location= ( a a -- f )
+  location swap location compare
+  0 =
 ;
 
 : location! { x y location-pointer }
