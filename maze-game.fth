@@ -41,25 +41,42 @@ end-structure
 ;
 
 char @ constant player.glyph
-create player location allot
-
 char # constant maze-exit.glyph
-create maze-exit location allot
-
 \ char _ constant maze-empty-space
 char * constant maze-wall.glyph
 
 12 constant maze-row-width
-variable maze-builder-row
+variable maze-count
+variable maze-in-construction
+
+begin-structure maze-header
+  location +field maze-header.exit
+  location +field maze-header.player-spawn
+  1 cells +field maze-header.row-count
+end-structure
+
+: maze-builder-row ( -- a )
+  maze-in-construction @ maze-header.row-count
+;
+
+: begin-maze ( -- )
+  here maze-in-construction !
+  1 maze-count +!
+  maze-header allot
+  0 maze-in-construction @ maze-header.row-count !
+;
+
+: end-maze  ( -- )
+;
 
 : location-from-glyph ( c -- addr )
   case
     player.glyph of
-      player
+      maze-in-construction @ maze-header.player-spawn
     endof
 
     maze-exit.glyph of
-      maze-exit
+      maze-in-construction @ maze-header.exit
     endof
 
     \ default
@@ -68,7 +85,6 @@ variable maze-builder-row
 ;
 
 : parse-maze-row { text-buffer text-buffer-byte-count }
-
 		 text-buffer-byte-count maze-row-width = if
 		 else
 		   abort" Invalid maze row!"
@@ -93,8 +109,35 @@ variable maze-builder-row
   1 maze-builder-row +!
 ;
 
-create maze
+variable maze
+here maze !
 
+begin-maze
+maze-row: ************
+maze-row: *@________#*
+maze-row: ************
+end-maze
+
+begin-maze
+maze-row: ************
+maze-row: *@_________*
+maze-row: *_________#*
+maze-row: ************
+end-maze
+
+begin-maze
+maze-row: ************
+maze-row: *@_________*
+maze-row: *__________*
+maze-row: **********_*
+maze-row: *__________*
+maze-row: *__*********
+maze-row: *__________*
+maze-row: *_________#*
+maze-row: ************
+end-maze
+
+begin-maze
 maze-row: ************
 maze-row: *@___*_____*
 maze-row: *____*__*__*
@@ -105,11 +148,20 @@ maze-row: *_****__*__*
 maze-row: *____*__*__*
 maze-row: *_______*_#*
 maze-row: ************
+end-maze
+
+: maze-exit ( -- a )
+  maze @ maze-header.exit
+;
+
+: player ( -- a )
+  maze @ maze-header.player-spawn
+;
 
 : maze@ { x y }
 	y maze-row-width *
 	x +
-	maze +
+	maze @ maze-header + +
 	c@
 ;
 
@@ -118,7 +170,7 @@ maze-row: ************
 ;
 
 : maze.height ( -- n )
-  maze-builder-row @
+  maze @ maze-header.row-count @
 ;
 
 \ render the maze
@@ -132,7 +184,6 @@ maze-row: ************
     loop
   loop
 ;
-
 
 : emit-at-location ( c a -- )
   location.to-xy at-xy emit
@@ -182,12 +233,24 @@ create tmp-player location allot
   then
 ;
 
-: game ( -- )
+: play-maze ( -- )
   begin
     page
     render
     handle-input
     player maze-exit location= until
+;
+
+: next-maze ( -- f )
+  maze.width maze.height * maze-header + maze @ + maze !
+  -1 maze-count +!
+  maze-count @ 0 >
+;
+
+: game ( -- )
+  begin
+    play-maze
+  next-maze false = until
 ;
 
 game
